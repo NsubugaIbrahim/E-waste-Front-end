@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F2937" />
+      <stop offset="1" stop-color="#111827" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)" />
+  <rect x="140" y="120" width="1000" height="480" rx="28" stroke="#9CA3AF" stroke-width="4" stroke-dasharray="14 10" fill="rgba(255,255,255,0.03)" />
+  <text x="640" y="300" fill="#E5E7EB" font-size="54" font-family="Inter, Arial, sans-serif" text-anchor="middle" font-weight="700">Product Image Placeholder</text>
+  <text x="640" y="368" fill="#9CA3AF" font-size="30" font-family="Inter, Arial, sans-serif" text-anchor="middle">Replace with your product image</text>
+  <text x="640" y="430" fill="#6B7280" font-size="24" font-family="Inter, Arial, sans-serif" text-anchor="middle">public/placeholders/products/&lt;product-slug&gt;.png</text>
+</svg>
