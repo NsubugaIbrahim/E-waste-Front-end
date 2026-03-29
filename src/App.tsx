@@ -4,51 +4,115 @@ import { Client } from '@gradio/client'
 import './App.css'
 
 const PRODUCT_OPTIONS = [
-  'Smartphone',
-  'Laptop',
   'Tablet',
-  'Desktop',
+  'Microwave',
+  'DSLR Camera',
+  'Air Conditioner',
   'Smartwatch',
-  'Monitor',
-  'Printer',
-  'Router',
+  'TV',
+  'Electric Scooter',
+  'Washing Machine',
+  'Laptop',
+  'Smartphone',
+  'Refrigerator',
+  'Gaming Console',
 ]
 
 const BRAND_OPTIONS = [
-  'Apple',
   'Samsung',
+  'LG',
+  'Apple',
+  'Sony',
+  'IFB',
+  'Lenovo',
+  'Bosch',
+  'Whirlpool',
+  'OnePlus',
+  'Microsoft',
+  'Nintendo',
+  'Nikon',
+  'Canon',
+  'Fujifilm',
+  'Huawei',
+  'Ola',
+  'Panasonic',
+  'Voltas',
+  'Noise',
+  'Bajaj',
+  'Daikin',
+  'Amazfit',
+  'Carrier',
+  'TVS',
+  'Boat',
+  'Blue Star',
+  'Ather',
+  'Hero',
+  'Morphy Richards',
+  'TCL',
+  'Acer',
+  'Godrej',
+  'Realme',
+  'Asus',
   'Dell',
   'HP',
-  'Lenovo',
-  'Asus',
-  'Acer',
-  'Sony',
-  'LG',
   'Xiaomi',
+  'Vivo',
 ]
 
 const PRODUCT_IMAGE_MAP: Record<string, string> = {
-  Smartphone: '/placeholders/products/smartphone.png',
-  Laptop: '/placeholders/products/laptop.png',
   Tablet: '/placeholders/products/tablet.png',
-  Desktop: '/placeholders/products/desktop.png',
+  Microwave: '/placeholders/products/microwave.png',
+  'DSLR Camera': '/placeholders/products/dslr-camera.png',
+  'Air Conditioner': '/placeholders/products/air-conditioner.png',
   Smartwatch: '/placeholders/products/smartwatch.png',
-  Monitor: '/placeholders/products/monitor.png',
-  Printer: '/placeholders/products/printer.png',
-  Router: '/placeholders/products/router.png',
+  TV: '/placeholders/products/tv.png',
+  'Electric Scooter': '/placeholders/products/electric-scooter.png',
+  'Washing Machine': '/placeholders/products/washing-machine.png',
+  Laptop: '/placeholders/products/laptop.png',
+  Smartphone: '/placeholders/products/smartphone.png',
+  Refrigerator: '/placeholders/products/refrigerator.png',
+  'Gaming Console': '/placeholders/products/gaming-console.png',
 }
 
 const BRAND_IMAGE_MAP: Record<string, string> = {
-  Apple: '/placeholders/brands/apple.png',
   Samsung: '/placeholders/brands/samsung.png',
+  LG: '/placeholders/brands/lg.png',
+  Apple: '/placeholders/brands/apple.png',
+  Sony: '/placeholders/brands/sony.png',
+  IFB: '/placeholders/brands/ifb.png',
+  Lenovo: '/placeholders/brands/lenovo.png',
+  Bosch: '/placeholders/brands/bosch.png',
+  Whirlpool: '/placeholders/brands/whirlpool.png',
+  OnePlus: '/placeholders/brands/oneplus.png',
+  Microsoft: '/placeholders/brands/microsoft.png',
+  Nintendo: '/placeholders/brands/nintendo.png',
+  Nikon: '/placeholders/brands/nikon.png',
+  Canon: '/placeholders/brands/canon.png',
+  Fujifilm: '/placeholders/brands/fujifilm.png',
+  Huawei: '/placeholders/brands/huawei.png',
+  Ola: '/placeholders/brands/ola.png',
+  Panasonic: '/placeholders/brands/panasonic.png',
+  Voltas: '/placeholders/brands/voltas.png',
+  Noise: '/placeholders/brands/noise.png',
+  Bajaj: '/placeholders/brands/bajaj.png',
+  Daikin: '/placeholders/brands/daikin.png',
+  Amazfit: '/placeholders/brands/amazfit.png',
+  Carrier: '/placeholders/brands/carrier.png',
+  TVS: '/placeholders/brands/tvs.png',
+  Boat: '/placeholders/brands/boat.png',
+  'Blue Star': '/placeholders/brands/blue-star.png',
+  Ather: '/placeholders/brands/ather.png',
+  Hero: '/placeholders/brands/hero.png',
+  'Morphy Richards': '/placeholders/brands/morphy-richards.png',
+  TCL: '/placeholders/brands/tcl.png',
+  Acer: '/placeholders/brands/acer.png',
+  Godrej: '/placeholders/brands/godrej.png',
+  Realme: '/placeholders/brands/realme.png',
+  Asus: '/placeholders/brands/asus.png',
   Dell: '/placeholders/brands/dell.png',
   HP: '/placeholders/brands/hp.png',
-  Lenovo: '/placeholders/brands/lenovo.png',
-  Asus: '/placeholders/brands/asus.png',
-  Acer: '/placeholders/brands/acer.png',
-  Sony: '/placeholders/brands/sony.png',
-  LG: '/placeholders/brands/lg.png',
   Xiaomi: '/placeholders/brands/xiaomi.png',
+  Vivo: '/placeholders/brands/vivo.png',
 }
 
 type FormState = {
@@ -57,11 +121,8 @@ type FormState = {
   usagePattern: '' | 'Light' | 'Moderate' | 'Heavy'
   buildQuality: string
   condition: string
-  userLifespan: string
-  expiryYears: string
   usedDuration: string
   originalPrice: string
-  currentPrice: string
 }
 
 type AnalysisResult = {
@@ -84,15 +145,25 @@ type ClientPayload = {
   product_type: string
   brand: string
   build_quality: number
-  usage_pattern: 'Light' | 'Moderate' | 'Heavy'
+  usage_intensity: number
   condition: number
-  price_retention_ratio: number
-  user_lifespan: number
+  original_price: number
+  used_duration: number
+  degradation_rate: number
+  stress_index: number
+  investment_density: number
 }
 
 type SpinClass = '' | 'spin-left' | 'spin-right'
+type ProjectionPoint = { year: number; probability: number }
 
 const REQUEST_TIMEOUT_MS = 20000
+const WHEEL_ANIM_DURATION = 520
+const USAGE_PATTERN_TO_INTENSITY: Record<'Light' | 'Moderate' | 'Heavy', number> = {
+  Light: 1,
+  Moderate: 2,
+  Heavy: 3,
+}
 
 function App() {
   const [form, setForm] = useState<FormState>({
@@ -101,14 +172,12 @@ function App() {
     usagePattern: '',
     buildQuality: '3',
     condition: '3',
-    userLifespan: '',
-    expiryYears: '',
     usedDuration: '',
     originalPrice: '',
-    currentPrice: '',
   })
 
   const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [projection, setProjection] = useState<ProjectionPoint[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [connectionStatus, setConnectionStatus] =
@@ -118,13 +187,71 @@ function App() {
   )
   const [workingEndpoint, setWorkingEndpoint] = useState<string | null>(null)
   const [workingSpaceId, setWorkingSpaceId] = useState<string | null>(null)
-  const [carouselSpin, setCarouselSpin] = useState<{
+  const [carouselMotion, setCarouselMotion] = useState<{
     productType: SpinClass
     brand: SpinClass
   }>({
     productType: '',
     brand: '',
   })
+
+  const triggerWheelMotion = (field: 'productType' | 'brand', direction: 1 | -1) => {
+    const spinClass: SpinClass = direction === 1 ? 'spin-right' : 'spin-left'
+
+    // avoid re-triggering while an animation is active
+    if (carouselMotion[field]) return
+
+    setCarouselMotion((prev) => ({
+      ...prev,
+      [field]: spinClass,
+    }))
+
+    // safety clear in case caller forgets
+    window.setTimeout(() => {
+      setCarouselMotion((prev) => ({
+        ...prev,
+        [field]: '',
+      }))
+    }, WHEEL_ANIM_DURATION + 60)
+  }
+
+  const getRotationDirection = (
+    options: string[],
+    currentValue: string,
+    nextValue: string
+  ): 1 | -1 => {
+    const currentIndex = getMatchedIndex(currentValue, options)
+    const nextIndex = getMatchedIndex(nextValue, options)
+
+    const forwardSteps = (nextIndex - currentIndex + options.length) % options.length
+    const backwardSteps = (currentIndex - nextIndex + options.length) % options.length
+
+    return forwardSteps <= backwardSteps ? 1 : -1
+  }
+
+  const cycleOption = (field: 'productType' | 'brand', direction: 1 | -1) => {
+    const options = field === 'productType' ? PRODUCT_OPTIONS : BRAND_OPTIONS
+
+    // prevent re-trigger while animating
+    if (carouselMotion[field]) return
+
+    const currentValue = field === 'productType' ? form.productType : form.brand
+    const currentIndex = getMatchedIndex(currentValue, options)
+    const nextIndex = (currentIndex + direction + options.length) % options.length
+    const nextValue = options[nextIndex]
+
+    triggerWheelMotion(field, direction)
+
+    // update the selected value after the wheel animation completes so the
+    // visual rotation is visible transitioning from old -> new
+    window.setTimeout(() => {
+      setForm((prev) => ({
+        ...prev,
+        [field]: nextValue,
+      }))
+      setCarouselMotion((prev) => ({ ...prev, [field]: '' }))
+    }, WHEEL_ANIM_DURATION)
+  }
   const [openDropdown, setOpenDropdown] = useState<null | 'productType' | 'brand'>(
     null
   )
@@ -186,42 +313,7 @@ function App() {
     form.productType.trim() || PRODUCT_OPTIONS[productIndex]
   const brandValueForCarousel = form.brand.trim() || BRAND_OPTIONS[brandIndex]
 
-  const cycleOption = (field: 'productType' | 'brand', direction: 1 | -1) => {
-    const options = field === 'productType' ? PRODUCT_OPTIONS : BRAND_OPTIONS
-    const spinClass: SpinClass = direction === 1 ? 'spin-right' : 'spin-left'
-
-    setCarouselSpin((prev) => ({
-      ...prev,
-      [field]: '',
-    }))
-
-    window.requestAnimationFrame(() => {
-      setCarouselSpin((prev) => ({
-        ...prev,
-        [field]: spinClass,
-      }))
-    })
-
-    setForm((prev) => {
-      const currentValue = field === 'productType' ? prev.productType : prev.brand
-      const currentIndex = getMatchedIndex(currentValue, options)
-      const nextIndex =
-        (currentIndex + direction + options.length) % options.length
-
-      return {
-        ...prev,
-        [field]: options[nextIndex],
-      }
-    })
-
-    window.setTimeout(() => {
-      setCarouselSpin((prev) => ({
-        ...prev,
-        [field]: '',
-      }))
-    }, 420)
-  }
-
+ 
   const getCoverflowSlides = (options: string[], currentIndex: number) => {
     const getAtOffset = (offset: number) =>
       options[(currentIndex + offset + options.length) % options.length]
@@ -242,6 +334,21 @@ function App() {
     field: 'productType' | 'brand',
     selectedValue: string
   ) => {
+    const options = field === 'productType' ? PRODUCT_OPTIONS : BRAND_OPTIONS
+    const currentValue = field === 'productType' ? form.productType : form.brand
+
+    if (selectedValue.trim() && selectedValue !== currentValue) {
+      const dir = getRotationDirection(options, currentValue, selectedValue)
+      // start the wheel motion then update DOM after animation completes
+      triggerWheelMotion(field, dir)
+      window.setTimeout(() => {
+        setForm((prev) => ({ ...prev, [field]: selectedValue }))
+        setOpenDropdown(null)
+        setCarouselMotion((prev) => ({ ...prev, [field]: '' }))
+      }, WHEEL_ANIM_DURATION)
+      return
+    }
+
     setForm((prev) => ({
       ...prev,
       [field]: selectedValue,
@@ -266,55 +373,155 @@ function App() {
 
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value as FormState['usagePattern'] }))
+    setForm((prev) => ({
+      ...prev,
+      [name]: value as FormState['usagePattern'],
+    }))
   }
 
-  const classifyEwaste = (input: {
-    usagePattern: 'Light' | 'Moderate' | 'Heavy'
+  const deriveModelFeatures = (input: {
     buildQuality: number
     condition: number
-    userLifespan: number
-    expiryYears: number
+    originalPrice: number
+    usedDuration: number
+    usageIntensity: number
+  }) => {
+    const safeBuild = Math.max(input.buildQuality, 1e-6)
+    const degradationRate = (6 - input.condition) / (input.usedDuration + 1)
+    const stressIndex = input.usageIntensity / safeBuild
+    const investmentDensity = input.originalPrice / safeBuild
+
+    return {
+      degradationRate,
+      stressIndex,
+      investmentDensity,
+    }
+  }
+
+  const localFallbackPrediction = (input: {
+    buildQuality: number
+    condition: number
+    usedDuration: number
+    usageIntensity: number
+    degradationRate: number
+    stressIndex: number
+  }) => {
+    const conditionRisk = (5 - input.condition) / 4
+    const buildRisk = (5 - input.buildQuality) / 4
+    const durationRisk = Math.min(input.usedDuration / 10, 1)
+    const usageRisk = (input.usageIntensity - 1) / 2
+    const degradationRisk = Math.min(input.degradationRate / 2, 1)
+    const stressRisk = Math.min(input.stressIndex / 3, 1)
+
+    const riskScore =
+      0.25 * conditionRisk +
+      0.2 * buildRisk +
+      0.15 * durationRisk +
+      0.1 * usageRisk +
+      0.15 * degradationRisk +
+      0.15 * stressRisk
+
+    const probability = Math.max(0, Math.min(1, riskScore))
+    return {
+      status: probability >= 0.5 ? 'READY' : 'NOT READY',
+      probability: (probability * 100).toFixed(2),
+      explanation:
+        probability >= 0.5
+          ? 'Remote prediction failed. Local estimate indicates elevated disposal readiness risk.'
+          : 'Remote prediction failed. Local estimate indicates disposal readiness is currently low.',
+      recommendation:
+        probability >= 0.5
+          ? 'Inspect device and route to certified e-waste channel if confirmed.'
+          : 'Continue usage with periodic condition checks.',
+    } as const
+  }
+
+  const buildProbabilityProjection = (input: {
+    buildQuality: number
+    condition: number
     usedDuration: number
     originalPrice: number
-    currentPrice: number
-  }) => {
-    const eps = 1e-6
-    const priceRetentionRatio = input.currentPrice / (input.originalPrice + eps)
-    const usageToExpiryRatio = input.usedDuration / (input.expiryYears + eps)
-    const lifespanStressRatio = input.usedDuration / (input.userLifespan + eps)
-    const yearsToExpiry = input.expiryYears - input.usedDuration
+    usageIntensity: number
+    baseProbabilityPct?: number
+  }): ProjectionPoint[] => {
+    const yearsAhead = 6
+    const baseFromModel =
+      input.baseProbabilityPct !== undefined
+        ? Math.max(0, Math.min(100, input.baseProbabilityPct)) / 100
+        : undefined
 
-    const veryOld = yearsToExpiry <= 0 || usageToExpiryRatio >= 1.1
-    const heavilyUsed = usageToExpiryRatio >= 0.8 || lifespanStressRatio >= 0.8
-    const veryLowValue = priceRetentionRatio <= 0.1 || input.currentPrice <= 1000
-    const lowValue = priceRetentionRatio <= 0.25
-    const veryBadCondition = input.condition <= 2
-    const midCondition = input.condition >= 3 && input.condition <= 4
-    const lowBuild = input.buildQuality <= 3
-    const heavyUsagePattern = input.usagePattern === 'Heavy'
+    const localNow = Number(
+      localFallbackPrediction({
+        buildQuality: input.buildQuality,
+        condition: input.condition,
+        usedDuration: input.usedDuration,
+        usageIntensity: input.usageIntensity,
+        degradationRate: deriveModelFeatures({
+          buildQuality: input.buildQuality,
+          condition: input.condition,
+          originalPrice: input.originalPrice,
+          usedDuration: input.usedDuration,
+          usageIntensity: input.usageIntensity,
+        }).degradationRate,
+        stressIndex: deriveModelFeatures({
+          buildQuality: input.buildQuality,
+          condition: input.condition,
+          originalPrice: input.originalPrice,
+          usedDuration: input.usedDuration,
+          usageIntensity: input.usageIntensity,
+        }).stressIndex,
+      }).probability
+    ) / 100
 
-    if (veryOld && (veryLowValue || veryBadCondition || heavyUsagePattern)) {
-      return 'Recycle'
-    }
-    if (veryLowValue && (veryBadCondition || heavilyUsed)) {
-      return 'Recycle'
-    }
-    if (lowValue && veryBadCondition && (lowBuild || heavyUsagePattern)) {
-      return 'Recycle'
-    }
-    if (veryBadCondition && !veryLowValue) {
-      return 'Refurbish'
-    }
-    if (
-      heavilyUsed &&
-      (midCondition || lowBuild || heavyUsagePattern) &&
-      !veryLowValue
-    ) {
-      return 'Refurbish'
+    const series: ProjectionPoint[] = []
+    for (let year = 0; year <= yearsAhead; year += 1) {
+      const futureCondition = Math.max(1, input.condition - 0.35 * year)
+      const futureBuildQuality = Math.max(1, input.buildQuality - 0.12 * year)
+      const futureUsedDuration = input.usedDuration + year
+
+      const futureDerived = deriveModelFeatures({
+        buildQuality: futureBuildQuality,
+        condition: futureCondition,
+        originalPrice: input.originalPrice,
+        usedDuration: futureUsedDuration,
+        usageIntensity: input.usageIntensity,
+      })
+
+      const futureLocal =
+        Number(
+          localFallbackPrediction({
+            buildQuality: futureBuildQuality,
+            condition: futureCondition,
+            usedDuration: futureUsedDuration,
+            usageIntensity: input.usageIntensity,
+            degradationRate: futureDerived.degradationRate,
+            stressIndex: futureDerived.stressIndex,
+          }).probability
+        ) / 100
+
+      const drift = year * 0.015
+      const blended =
+        baseFromModel !== undefined
+          ? year === 0
+            ? baseFromModel
+            : 0.45 * baseFromModel + 0.55 * futureLocal + drift
+          : futureLocal + drift
+
+      series.push({
+        year,
+        probability: Math.max(0, Math.min(1, blended)) * 100,
+      })
     }
 
-    return 'Active'
+    // keep continuity at year 0 with local estimate if no model probability was provided
+    if (baseFromModel === undefined && series.length > 0) {
+      series[0] = {
+        year: 0,
+        probability: Math.max(0, Math.min(1, localNow)) * 100,
+      }
+    }
+
+    return series
   }
 
   const getCandidateEndpoints = () => {
@@ -565,40 +772,60 @@ function App() {
   const buildPayload = (input: {
     productType: string
     brand: string
-    usagePattern: 'Light' | 'Moderate' | 'Heavy'
+    usageIntensity: number
     buildQuality: number
     condition: number
-    priceRetentionRatio: number
-    userLifespan: number
+    originalPrice: number
+    usedDuration: number
   }) => ({
+    ...deriveModelFeatures({
+      buildQuality: input.buildQuality,
+      condition: input.condition,
+      originalPrice: input.originalPrice,
+      usedDuration: input.usedDuration,
+      usageIntensity: input.usageIntensity,
+    }),
     data: [
       input.productType,
       input.brand,
       input.buildQuality,
-      input.usagePattern,
+      input.usageIntensity,
       input.condition,
-      input.priceRetentionRatio,
-      input.userLifespan,
+      input.originalPrice,
+      input.usedDuration,
     ],
   })
 
   const buildClientPayload = (input: {
     productType: string
     brand: string
-    usagePattern: 'Light' | 'Moderate' | 'Heavy'
+    usageIntensity: number
     buildQuality: number
     condition: number
-    priceRetentionRatio: number
-    userLifespan: number
-  }): ClientPayload => ({
-    product_type: input.productType,
-    brand: input.brand,
-    build_quality: input.buildQuality,
-    usage_pattern: input.usagePattern,
-    condition: input.condition,
-    price_retention_ratio: input.priceRetentionRatio,
-    user_lifespan: input.userLifespan,
-  })
+    originalPrice: number
+    usedDuration: number
+  }): ClientPayload => {
+    const derived = deriveModelFeatures({
+      buildQuality: input.buildQuality,
+      condition: input.condition,
+      originalPrice: input.originalPrice,
+      usedDuration: input.usedDuration,
+      usageIntensity: input.usageIntensity,
+    })
+
+    return {
+      product_type: input.productType,
+      brand: input.brand,
+      build_quality: input.buildQuality,
+      usage_intensity: input.usageIntensity,
+      condition: input.condition,
+      original_price: input.originalPrice,
+      used_duration: input.usedDuration,
+      degradation_rate: derived.degradationRate,
+      stress_index: derived.stressIndex,
+      investment_density: derived.investmentDensity,
+    }
+  }
 
   const handleTestConnection = async () => {
     setConnectionStatus('testing')
@@ -643,11 +870,14 @@ function App() {
     const payload = buildPayload({
       productType: form.productType.trim() || 'Smartphone',
       brand: form.brand.trim() || 'Samsung',
-      usagePattern: form.usagePattern || 'Moderate',
+      usageIntensity:
+        USAGE_PATTERN_TO_INTENSITY[
+          (form.usagePattern || 'Moderate') as 'Light' | 'Moderate' | 'Heavy'
+        ],
       buildQuality: Number(form.buildQuality || '3'),
       condition: Number(form.condition || '3'),
-      priceRetentionRatio: 0.3,
-      userLifespan: Number(form.userLifespan || '5'),
+      originalPrice: Number(form.originalPrice || '20000'),
+      usedDuration: Number(form.usedDuration || '1'),
     })
 
     const errors: string[] = []
@@ -673,6 +903,7 @@ function App() {
   const handleSubmit = async () => {
     setError(null)
     setResult(null)
+    setProjection([])
 
     if (
       !form.productType.trim() ||
@@ -680,11 +911,8 @@ function App() {
       !form.usagePattern ||
       !form.buildQuality ||
       !form.condition ||
-      !form.userLifespan ||
-      !form.expiryYears ||
       !form.usedDuration ||
-      !form.originalPrice ||
-      !form.currentPrice
+      !form.originalPrice
     ) {
       setError('Please fill all fields before analysis.')
       return
@@ -692,63 +920,57 @@ function App() {
 
     const buildQuality = Number(form.buildQuality)
     const condition = Number(form.condition)
-    const userLifespan = Number(form.userLifespan)
-    const expiryYears = Number(form.expiryYears)
+    const usageIntensity = USAGE_PATTERN_TO_INTENSITY[form.usagePattern]
     const usedDuration = Number(form.usedDuration)
     const originalPrice = Number(form.originalPrice)
-    const currentPrice = Number(form.currentPrice)
 
     if (
       Number.isNaN(buildQuality) ||
       Number.isNaN(condition) ||
-      Number.isNaN(userLifespan) ||
-      Number.isNaN(expiryYears) ||
       Number.isNaN(usedDuration) ||
-      Number.isNaN(originalPrice) ||
-      Number.isNaN(currentPrice)
+      Number.isNaN(originalPrice)
     ) {
       setError('Please enter valid numeric values.')
       return
     }
 
-    if (buildQuality < 1 || buildQuality > 5 || condition < 1 || condition > 5) {
-      setError('Build Quality and Condition must be between 1 and 5.')
+    if (
+      buildQuality < 1 ||
+      buildQuality > 5 ||
+      condition < 1 ||
+      condition > 5 ||
+      !usageIntensity
+    ) {
+      setError('Build Quality/Condition must be 1-5, and Usage Pattern is required.')
       return
     }
 
-    const eps = 1e-6
-
-    const priceRetentionRatio = currentPrice / (originalPrice + eps)
-
-    const parsedInput = {
-      usagePattern: form.usagePattern,
+    const derived = deriveModelFeatures({
       buildQuality,
       condition,
-      userLifespan,
-      expiryYears,
-      usedDuration,
       originalPrice,
-      currentPrice,
-    } as const
+      usedDuration,
+      usageIntensity,
+    })
 
     const payload = buildPayload({
       productType: form.productType.trim(),
       brand: form.brand.trim(),
-      usagePattern: form.usagePattern,
+      usageIntensity,
       buildQuality,
       condition,
-      priceRetentionRatio,
-      userLifespan,
+      originalPrice,
+      usedDuration,
     })
 
     const clientPayload = buildClientPayload({
       productType: form.productType.trim(),
       brand: form.brand.trim(),
-      usagePattern: form.usagePattern,
+      usageIntensity,
       buildQuality,
       condition,
-      priceRetentionRatio,
-      userLifespan,
+      originalPrice,
+      usedDuration,
     })
 
     setIsLoading(true)
@@ -776,6 +998,16 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
+            setProjection(
+              buildProbabilityProjection({
+                buildQuality,
+                condition,
+                usedDuration,
+                originalPrice,
+                usageIntensity,
+                baseProbabilityPct: prediction.probability,
+              })
+            )
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -811,6 +1043,16 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
+            setProjection(
+              buildProbabilityProjection({
+                buildQuality,
+                condition,
+                usedDuration,
+                originalPrice,
+                usageIntensity,
+                baseProbabilityPct: prediction.probability,
+              })
+            )
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -828,66 +1070,56 @@ function App() {
         'No endpoint configured. Set VITE_PREDICT_URL or VITE_HF_SPACE_URL in .env.local'
       )
 
-      const managementStatus = classifyEwaste(parsedInput)
-      const status = managementStatus === 'Recycle' ? 'READY' : 'NOT READY'
-      const confidence =
-        managementStatus === 'Recycle'
-          ? '88.00'
-          : managementStatus === 'Refurbish'
-            ? '64.00'
-            : '24.00'
-
-      setResult({
-        status,
-        probability: confidence,
-        explanation:
-          managementStatus === 'Recycle'
-            ? 'Device appears near end-of-life based on value loss, condition, and usage stress.'
-            : managementStatus === 'Refurbish'
-              ? 'Device is stressed but still suitable for refurbishment before recycling.'
-              : 'Device still has usable life and is not currently e-waste ready.',
-        recommendation:
-          managementStatus === 'Recycle'
-            ? 'Send to authorized e-waste recycling collection.'
-            : managementStatus === 'Refurbish'
-              ? 'Repair/refurbish and reassess later.'
-              : 'Continue using and monitor performance over time.',
+      const fallback = localFallbackPrediction({
+        buildQuality,
+        condition,
+        usedDuration,
+        usageIntensity,
+        degradationRate: derived.degradationRate,
+        stressIndex: derived.stressIndex,
       })
+      setResult(fallback)
+      setProjection(
+        buildProbabilityProjection({
+          buildQuality,
+          condition,
+          usedDuration,
+          originalPrice,
+          usageIntensity,
+          baseProbabilityPct: Number(fallback.probability),
+        })
+      )
     } catch (error) {
       console.error('API error:', error)
       setConnectionStatus('failed')
 
-      const managementStatus = classifyEwaste(parsedInput)
-      const status = managementStatus === 'Recycle' ? 'READY' : 'NOT READY'
-      const confidence =
-        managementStatus === 'Recycle'
-          ? '88.00'
-          : managementStatus === 'Refurbish'
-            ? '64.00'
-            : '24.00'
-
-      setResult({
-        status,
-        probability: confidence,
-        explanation:
-          managementStatus === 'Recycle'
-            ? 'Live API failed. Local heuristic says the device is near end-of-life (dispose path likely).' 
-            : managementStatus === 'Refurbish'
-              ? 'Live API failed. Local heuristic suggests refurbishment before disposal.'
-              : 'Live API failed. Local heuristic suggests the device can be kept for now.',
-        recommendation:
-          managementStatus === 'Recycle'
-            ? 'Check API URL/server. Meanwhile, use certified e-waste disposal channels.'
-            : managementStatus === 'Refurbish'
-              ? 'Check API URL/server. Meanwhile, repair/refurbish and reassess later.'
-              : 'Check API URL/server. Meanwhile, continue use and monitor condition.',
+      const fallback = localFallbackPrediction({
+        buildQuality,
+        condition,
+        usedDuration,
+        usageIntensity,
+        degradationRate: derived.degradationRate,
+        stressIndex: derived.stressIndex,
       })
+      setResult(fallback)
+      setProjection(
+        buildProbabilityProjection({
+          buildQuality,
+          condition,
+          usedDuration,
+          originalPrice,
+          usageIntensity,
+          baseProbabilityPct: Number(fallback.probability),
+        })
+      )
 
       const reason = formatUnknownError(error)
       setConnectionMessage(
         `Connected Space may be running, but prediction failed: ${getPredictionErrorHint(reason)}`
       )
-      setError('Remote model call failed during prediction. Showing local fallback recommendation. Check Space logs for stack trace.')
+      setError(
+        'Remote model call failed during prediction. Showing local fallback recommendation. Check Space logs for stack trace.'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -965,6 +1197,53 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Product Type Carousel */}
+            <div className="carousel-card compact-carousel">
+              <p className="carousel-title">Product Preview</p>
+              <div className="carousel-viewport">
+                {/* Nav buttons stay exactly the same */}
+                <button
+                  type="button"
+                  className="carousel-nav carousel-nav-left"
+                  onClick={() => cycleOption('productType', -1)}
+                  aria-label="Previous product"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="carousel-nav carousel-nav-right"
+                  onClick={() => cycleOption('productType', 1)}
+                  aria-label="Next product"
+                >
+                  ›
+                </button>
+
+                <div className="carousel-side-fade carousel-side-fade-left" />
+                <div className="carousel-side-fade carousel-side-fade-right" />
+
+                {/* Track — NO spin class anymore */}
+                <div className={`carousel-track ${carouselMotion.productType}`}>
+                  {productCoverflowSlides.map((slide) => (
+                    <div
+                      key={`product-${slide.key}-${slide.value}`}
+                      className={`carousel-slide carousel-slide-${slide.position}`}
+                    >
+                      <img
+                        src={getMappedImageSrc('products', slide.value)}
+                        alt={`${slide.value} preview`}
+                        className="carousel-image"
+                        onError={(event) => {
+                          event.currentTarget.src = '/placeholders/products/_placeholder.svg'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="carousel-caption">{productValueForCarousel}</p>
+            </div>
           </div>
 
           <div className="field">
@@ -1016,101 +1295,49 @@ function App() {
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="field field-span-2">
-            <label>Visual Selector</label>
-            <div className="carousel-grid">
-              <div className="carousel-card">
-                <p className="carousel-title">Product Preview</p>
-                <div className="carousel-viewport">
-                  <button
-                    type="button"
-                    className="carousel-nav carousel-nav-left"
-                    onClick={() => cycleOption('productType', -1)}
-                    aria-label="Previous product"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="carousel-nav carousel-nav-right"
-                    onClick={() => cycleOption('productType', 1)}
-                    aria-label="Next product"
-                  >
-                    ›
-                  </button>
-                  <div className="carousel-side-fade carousel-side-fade-left" />
-                  <div className="carousel-side-fade carousel-side-fade-right" />
-                  <div
-                    className={`carousel-track ${carouselSpin.productType}`}
-                    aria-live="polite"
-                  >
-                    {productCoverflowSlides.map((slide) => (
-                      <div
-                        key={`product-${slide.key}-${slide.value}`}
-                        className={`carousel-slide carousel-slide-${slide.position}`}
-                      >
-                        <img
-                          src={getMappedImageSrc('products', slide.value)}
-                          alt={`${slide.value} preview`}
-                          className="carousel-image"
-                          onError={(event) => {
-                            event.currentTarget.src =
-                              '/placeholders/products/_placeholder.svg'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="carousel-caption">{productValueForCarousel}</p>
-              </div>
+            <div className="carousel-card compact-carousel">
+              <p className="carousel-title">Brand Preview</p>
+              <div className="carousel-viewport">
+                <button
+                  type="button"
+                  className="carousel-nav carousel-nav-left"
+                  onClick={() => cycleOption('brand', -1)}
+                  aria-label="Previous brand"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="carousel-nav carousel-nav-right"
+                  onClick={() => cycleOption('brand', 1)}
+                  aria-label="Next brand"
+                >
+                  ›
+                </button>
 
-              <div className="carousel-card">
-                <p className="carousel-title">Brand Preview</p>
-                <div className="carousel-viewport">
-                  <button
-                    type="button"
-                    className="carousel-nav carousel-nav-left"
-                    onClick={() => cycleOption('brand', -1)}
-                    aria-label="Previous brand"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="carousel-nav carousel-nav-right"
-                    onClick={() => cycleOption('brand', 1)}
-                    aria-label="Next brand"
-                  >
-                    ›
-                  </button>
-                  <div className="carousel-side-fade carousel-side-fade-left" />
-                  <div className="carousel-side-fade carousel-side-fade-right" />
-                  <div
-                    className={`carousel-track ${carouselSpin.brand}`}
-                    aria-live="polite"
-                  >
-                    {brandCoverflowSlides.map((slide) => (
-                      <div
-                        key={`brand-${slide.key}-${slide.value}`}
-                        className={`carousel-slide carousel-slide-${slide.position}`}
-                      >
-                        <img
-                          src={getMappedImageSrc('brands', slide.value)}
-                          alt={`${slide.value} preview`}
-                          className="carousel-image"
-                          onError={(event) => {
-                            event.currentTarget.src = '/placeholders/brands/_placeholder.svg'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                <div className="carousel-side-fade carousel-side-fade-left" />
+                <div className="carousel-side-fade carousel-side-fade-right" />
+
+                <div className={`carousel-track ${carouselMotion.brand}`}>
+                  {brandCoverflowSlides.map((slide) => (
+                    <div
+                      key={`brand-${slide.key}-${slide.value}`}
+                      className={`carousel-slide carousel-slide-${slide.position}`}
+                    >
+                      <img
+                        src={getMappedImageSrc('brands', slide.value)}
+                        alt={`${slide.value} preview`}
+                        className="carousel-image"
+                        onError={(event) => {
+                          event.currentTarget.src = '/placeholders/brands/_placeholder.svg'
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
-                <p className="carousel-caption">{brandValueForCarousel}</p>
               </div>
+              <p className="carousel-caption">{brandValueForCarousel}</p>
             </div>
           </div>
 
@@ -1130,6 +1357,11 @@ function App() {
               <option value="Moderate">Moderate</option>
               <option value="Heavy">Heavy</option>
             </select>
+            {form.usagePattern && (
+              <small>
+                Internal usage intensity: {USAGE_PATTERN_TO_INTENSITY[form.usagePattern]}
+              </small>
+            )}
           </div>
 
           <div className="field">
@@ -1148,21 +1380,6 @@ function App() {
           </div>
 
           <div className="field">
-            <label htmlFor="currentPrice">Current Price</label>
-            <input
-              id="currentPrice"
-              type="number"
-              min={0}
-              step="0.01"
-              name="currentPrice"
-              placeholder="e.g. 18000"
-              onChange={handleChange}
-              className="input"
-              value={form.currentPrice}
-            />
-          </div>
-
-          <div className="field">
             <label htmlFor="usedDuration">Used Duration (years)</label>
             <input
               id="usedDuration"
@@ -1177,66 +1394,38 @@ function App() {
             />
           </div>
 
-          <div className="field">
-            <label htmlFor="expiryYears">Expiry Years</label>
-            <input
-              id="expiryYears"
-              type="number"
-              min={0}
-              step="0.1"
-              name="expiryYears"
-              placeholder="e.g. 6"
-              onChange={handleChange}
-              className="input"
-              value={form.expiryYears}
-            />
-          </div>
+          <div className="field-pair">
+            <div className="field">
+              <label htmlFor="buildQuality">Build Quality (1-5)</label>
+              <input
+                id="buildQuality"
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                name="buildQuality"
+                onChange={handleChange}
+                className="input"
+                value={form.buildQuality || '3'}
+              />
+              <small>Selected: {form.buildQuality || '3'}</small>
+            </div>
 
-          <div className="field">
-            <label htmlFor="userLifespan">User Lifespan</label>
-            <input
-              id="userLifespan"
-              type="number"
-              min={0}
-              step="0.1"
-              name="userLifespan"
-              placeholder="e.g. 5"
-              onChange={handleChange}
-              className="input"
-              value={form.userLifespan}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="buildQuality">Build Quality (1-5)</label>
-            <input
-              id="buildQuality"
-              type="range"
-              min="1"
-              max="5"
-              step="1"
-              name="buildQuality"
-              onChange={handleChange}
-              className="input"
-              value={form.buildQuality || '3'}
-            />
-            <small>Selected: {form.buildQuality || '3'}</small>
-          </div>
-
-          <div className="field">
-            <label htmlFor="condition">Condition (1-5)</label>
-            <input
-              id="condition"
-              type="range"
-              min="1"
-              max="5"
-              step="1"
-              name="condition"
-              onChange={handleChange}
-              className="input"
-              value={form.condition || '3'}
-            />
-            <small>Selected: {form.condition || '3'}</small>
+            <div className="field">
+              <label htmlFor="condition">Condition (1-5)</label>
+              <input
+                id="condition"
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                name="condition"
+                onChange={handleChange}
+                className="input"
+                value={form.condition || '3'}
+              />
+              <small>Selected: {form.condition || '3'}</small>
+            </div>
           </div>
         </div>
 
@@ -1276,6 +1465,52 @@ function App() {
             <p>
               <strong>Recommendation:</strong> {result.recommendation}
             </p>
+
+            {projection.length > 1 && (
+              <div className="projection-chart-wrap">
+                <h3>E-Waste Readiness Projection (next years)</h3>
+                <svg viewBox="0 0 420 170" className="projection-chart" role="img" aria-label="E-waste readiness projection over coming years">
+                  <line x1="30" y1="140" x2="400" y2="140" className="projection-axis" />
+                  <line x1="30" y1="20" x2="30" y2="140" className="projection-axis" />
+                  {[0, 25, 50, 75, 100].map((tick) => {
+                    const y = 140 - (tick / 100) * 120
+                    return (
+                      <g key={`tick-${tick}`}>
+                        <line x1="30" y1={y} x2="400" y2={y} className="projection-grid" />
+                        <text x="6" y={y + 4} className="projection-tick-label">
+                          {tick}%
+                        </text>
+                      </g>
+                    )
+                  })}
+
+                  <polyline
+                    className="projection-line"
+                    fill="none"
+                    points={projection
+                      .map((point, index) => {
+                        const x = 30 + (index / (projection.length - 1)) * 370
+                        const y = 140 - (point.probability / 100) * 120
+                        return `${x},${y}`
+                      })
+                      .join(' ')}
+                  />
+
+                  {projection.map((point, index) => {
+                    const x = 30 + (index / (projection.length - 1)) * 370
+                    const y = 140 - (point.probability / 100) * 120
+                    return (
+                      <g key={`point-${point.year}`}>
+                        <circle cx={x} cy={y} r="3.5" className="projection-point" />
+                        <text x={x - 10} y="157" className="projection-year-label">
+                          {2026 + point.year}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              </div>
+            )}
           </motion.div>
         )}
       </motion.div>
