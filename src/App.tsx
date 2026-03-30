@@ -149,9 +149,6 @@ type ClientPayload = {
   condition: number
   original_price: number
   used_duration: number
-  degradation_rate: number
-  stress_index: number
-  investment_density: number
 }
 
 type SpinClass = '' | 'spin-left' | 'spin-right'
@@ -524,11 +521,37 @@ function App() {
     return series
   }
 
- const getCandidateEndpoints = () => {
-  const directUrl = (import.meta.env.VITE_PREDICT_URL as string | undefined)?.trim()
+  const getCandidateEndpoints = () => {
+    const directUrl = (import.meta.env.VITE_PREDICT_URL as string | undefined)?.trim()
+    const spaceUrl = (import.meta.env.VITE_HF_SPACE_URL as string | undefined)?.trim()
 
-  return directUrl ? [directUrl] : []
-}
+    const endpoints = new Set<string>()
+
+    const addFromValue = (value: string) => {
+      const normalized = value.trim().replace(/\/+$/, '')
+      if (!normalized) return
+
+      if (/\/run\/predict$/i.test(normalized)) {
+        endpoints.add(normalized)
+        endpoints.add(normalized.replace(/\/run\/predict$/i, '/api/predict'))
+        return
+      }
+
+      if (/\/api\/predict$/i.test(normalized)) {
+        endpoints.add(normalized)
+        endpoints.add(normalized.replace(/\/api\/predict$/i, '/run/predict'))
+        return
+      }
+
+      endpoints.add(`${normalized}/run/predict`)
+      endpoints.add(`${normalized}/api/predict`)
+    }
+
+    if (directUrl) addFromValue(directUrl)
+    if (spaceUrl) addFromValue(spaceUrl)
+
+    return Array.from(endpoints)
+  }
 
   const normalizeSpaceId = (rawValue: string): string | null => {
     const value = rawValue.trim()
@@ -784,14 +807,6 @@ function App() {
     originalPrice: number
     usedDuration: number
   }): ClientPayload => {
-    const derived = deriveModelFeatures({
-      buildQuality: input.buildQuality,
-      condition: input.condition,
-      originalPrice: input.originalPrice,
-      usedDuration: input.usedDuration,
-      usageIntensity: input.usageIntensity,
-    })
-
     return {
       product_type: input.productType,
       brand: input.brand,
@@ -800,9 +815,6 @@ function App() {
       condition: input.condition,
       original_price: input.originalPrice,
       used_duration: input.usedDuration,
-      degradation_rate: derived.degradationRate,
-      stress_index: derived.stressIndex,
-      investment_density: derived.investmentDensity,
     }
   }
 
