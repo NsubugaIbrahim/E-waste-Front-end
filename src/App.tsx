@@ -154,6 +154,13 @@ type ClientPayload = {
 type SpinClass = '' | 'spin-left' | 'spin-right'
 type ProjectionPoint = { year: number; probability: number }
 
+const PROJECTION_CHART = {
+  xMin: 30,
+  xMax: 400,
+  yMin: 20,
+  yMax: 140,
+}
+
 const REQUEST_TIMEOUT_MS = 20000
 const WHEEL_ANIM_DURATION = 520
 const USAGE_PATTERN_TO_INTENSITY: Record<'Light' | 'Moderate' | 'Heavy', number> = {
@@ -441,37 +448,53 @@ function App() {
     usageIntensity: number
     baseProbabilityPct?: number
   }): ProjectionPoint[] => {
+    const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
     const yearsAhead = 6
     const baseFromModel =
       input.baseProbabilityPct !== undefined
-        ? Math.max(0, Math.min(100, input.baseProbabilityPct)) / 100
+        ? clamp01(input.baseProbabilityPct / 100)
         : undefined
 
-    const localNow = Number(
-      localFallbackPrediction({
-        buildQuality: input.buildQuality,
-        condition: input.condition,
-        usedDuration: input.usedDuration,
-        usageIntensity: input.usageIntensity,
-        degradationRate: deriveModelFeatures({
-          buildQuality: input.buildQuality,
-          condition: input.condition,
-          originalPrice: input.originalPrice,
-          usedDuration: input.usedDuration,
-          usageIntensity: input.usageIntensity,
-        }).degradationRate,
-        stressIndex: deriveModelFeatures({
-          buildQuality: input.buildQuality,
-          condition: input.condition,
-          originalPrice: input.originalPrice,
-          usedDuration: input.usedDuration,
-          usageIntensity: input.usageIntensity,
-        }).stressIndex,
-      }).probability
-    ) / 100
+    const localNow =
+      clamp01(
+        Number(
+          localFallbackPrediction({
+            buildQuality: input.buildQuality,
+            condition: input.condition,
+            usedDuration: input.usedDuration,
+            usageIntensity: input.usageIntensity,
+            degradationRate: deriveModelFeatures({
+              buildQuality: input.buildQuality,
+              condition: input.condition,
+              originalPrice: input.originalPrice,
+              usedDuration: input.usedDuration,
+              usageIntensity: input.usageIntensity,
+            }).degradationRate,
+            stressIndex: deriveModelFeatures({
+              buildQuality: input.buildQuality,
+              condition: input.condition,
+              originalPrice: input.originalPrice,
+              usedDuration: input.usedDuration,
+              usageIntensity: input.usageIntensity,
+            }).stressIndex,
+          }).probability
+        )
+      ) / 100
 
-    const series: ProjectionPoint[] = []
-    for (let year = 0; year <= yearsAhead; year += 1) {
+    // Year-0 anchor is the model estimate (if present) or local estimate.
+    // Future years use an incremental hazard update so readiness never decreases.
+    const baseProbability = baseFromModel ?? localNow
+
+    const series: ProjectionPoint[] = [
+      {
+        year: 0,
+        probability: baseProbability * 100,
+      },
+    ]
+
+    let rollingProbability = baseProbability
+
+    for (let year = 1; year <= yearsAhead; year += 1) {
       const futureCondition = Math.max(1, input.condition - 0.35 * year)
       const futureBuildQuality = Math.max(1, input.buildQuality - 0.12 * year)
       const futureUsedDuration = input.usedDuration + year
@@ -484,7 +507,7 @@ function App() {
         usageIntensity: input.usageIntensity,
       })
 
-      const futureLocal =
+      const futureLocal = clamp01(
         Number(
           localFallbackPrediction({
             buildQuality: futureBuildQuality,
@@ -495,30 +518,51 @@ function App() {
             stressIndex: futureDerived.stressIndex,
           }).probability
         ) / 100
+      )
 
-      const drift = year * 0.015
-      const blended =
-        baseFromModel !== undefined
-          ? year === 0
-            ? baseFromModel
-            : 0.45 * baseFromModel + 0.55 * futureLocal + drift
-          : futureLocal + drift
+      const degradationPressure = clamp01(futureDerived.degradationRate / 2)
+      const usagePressure = clamp01((input.usageIntensity - 1) / 2)
+      const agingPressure = clamp01(futureUsedDuration / 12)
+
+      const annualIncrement = clamp01(
+        0.018 +
+          0.05 * futureLocal +
+          0.035 * degradationPressure +
+          0.025 * usagePressure +
+          0.02 * agingPressure
+      )
+
+      rollingProbability = clamp01(
+        rollingProbability + (1 - rollingProbability) * annualIncrement
+      )
 
       series.push({
         year,
-        probability: Math.max(0, Math.min(1, blended)) * 100,
+        probability: rollingProbability * 100,
       })
     }
 
-    // keep continuity at year 0 with local estimate if no model probability was provided
-    if (baseFromModel === undefined && series.length > 0) {
-      series[0] = {
-        year: 0,
-        probability: Math.max(0, Math.min(1, localNow)) * 100,
-      }
-    }
-
     return series
+  }
+
+  const getProjectionChartPoints = (series: ProjectionPoint[]) => {
+    const total = series.length - 1
+    const xRange = PROJECTION_CHART.xMax - PROJECTION_CHART.xMin
+    const yRange = PROJECTION_CHART.yMax - PROJECTION_CHART.yMin
+
+    return series.map((point, index) => {
+      const safeProbability = Math.max(0, Math.min(100, point.probability))
+      const ratio = total > 0 ? index / total : 0
+      const x = PROJECTION_CHART.xMin + ratio * xRange
+      const y = PROJECTION_CHART.yMax - (safeProbability / 100) * yRange
+
+      return {
+        ...point,
+        probability: safeProbability,
+        x,
+        y,
+      }
+    })
   }
 
   const getCandidateEndpoints = () => {
@@ -1116,6 +1160,12 @@ function App() {
     }
   }
 
+  const projectionStartYear = new Date().getFullYear()
+  const projectionChartPoints = getProjectionChartPoints(projection)
+  const projectionPath = projectionChartPoints
+    .map((point) => `${point.x},${point.y}`)
+    .join(' ')
+
   return (
     <div className="app-shell">
       <div className="glow glow-pink" />
@@ -1461,13 +1511,15 @@ function App() {
               <div className="projection-chart-wrap">
                 <h3>E-Waste Readiness Projection (next years)</h3>
                 <svg viewBox="0 0 420 170" className="projection-chart" role="img" aria-label="E-waste readiness projection over coming years">
-                  <line x1="30" y1="140" x2="400" y2="140" className="projection-axis" />
-                  <line x1="30" y1="20" x2="30" y2="140" className="projection-axis" />
+                  <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMax} x2={PROJECTION_CHART.xMax} y2={PROJECTION_CHART.yMax} className="projection-axis" />
+                  <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMin} x2={PROJECTION_CHART.xMin} y2={PROJECTION_CHART.yMax} className="projection-axis" />
                   {[0, 25, 50, 75, 100].map((tick) => {
-                    const y = 140 - (tick / 100) * 120
+                    const y =
+                      PROJECTION_CHART.yMax -
+                      (tick / 100) * (PROJECTION_CHART.yMax - PROJECTION_CHART.yMin)
                     return (
                       <g key={`tick-${tick}`}>
-                        <line x1="30" y1={y} x2="400" y2={y} className="projection-grid" />
+                        <line x1={PROJECTION_CHART.xMin} y1={y} x2={PROJECTION_CHART.xMax} y2={y} className="projection-grid" />
                         <text x="6" y={y + 4} className="projection-tick-label">
                           {tick}%
                         </text>
@@ -1478,24 +1530,17 @@ function App() {
                   <polyline
                     className="projection-line"
                     fill="none"
-                    points={projection
-                      .map((point, index) => {
-                        const x = 30 + (index / (projection.length - 1)) * 370
-                        const y = 140 - (point.probability / 100) * 120
-                        return `${x},${y}`
-                      })
-                      .join(' ')}
+                    points={projectionPath}
                   />
 
-                  {projection.map((point, index) => {
-                    const x = 30 + (index / (projection.length - 1)) * 370
-                    const y = 140 - (point.probability / 100) * 120
+                  {projectionChartPoints.map((point) => {
                     return (
                       <g key={`point-${point.year}`}>
-                        <circle cx={x} cy={y} r="3.5" className="projection-point" />
-                        <text x={x - 10} y="157" className="projection-year-label">
-                          {2026 + point.year}
+                        <circle cx={point.x} cy={point.y} r="4.2" className="projection-point" />
+                        <text x={point.x - 13} y="157" className="projection-year-label">
+                          {projectionStartYear + point.year}
                         </text>
+                        <title>{`Year ${projectionStartYear + point.year}: ${point.probability.toFixed(2)}%`}</title>
                       </g>
                     )
                   })}
