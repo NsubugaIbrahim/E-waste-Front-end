@@ -524,32 +524,11 @@ function App() {
     return series
   }
 
-  const getCandidateEndpoints = () => {
-    const directUrl = (import.meta.env.VITE_PREDICT_URL as string | undefined)?.trim()
-    const spaceUrl = (import.meta.env.VITE_HF_SPACE_URL as string | undefined)?.trim()
-    const apiName =
-      (import.meta.env.VITE_GRADIO_API_NAME as string | undefined)?.trim() ||
-      '/predict'
+ const getCandidateEndpoints = () => {
+  const directUrl = (import.meta.env.VITE_PREDICT_URL as string | undefined)?.trim()
 
-    const endpoints = new Set<string>()
-
-    if (directUrl) endpoints.add(directUrl)
-
-    if (spaceUrl) {
-      if (spaceUrl.includes('huggingface.co')) {
-        return Array.from(endpoints)
-      }
-
-      const normalizedBase = spaceUrl.replace(/\/+$/, '')
-      const normalizedApiName = apiName.startsWith('/') ? apiName : `/${apiName}`
-      endpoints.add(`${normalizedBase}/run${normalizedApiName}`)
-      endpoints.add(`${normalizedBase}/api${normalizedApiName}`)
-      endpoints.add(`${normalizedBase}/run/predict`)
-      endpoints.add(`${normalizedBase}/api/predict`)
-    }
-
-    return Array.from(endpoints)
-  }
+  return directUrl ? [directUrl] : []
+}
 
   const normalizeSpaceId = (rawValue: string): string | null => {
     const value = rawValue.trim()
