@@ -273,13 +273,14 @@ function App() {
     const normalized = value.trim()
     const imageFiles = kind === 'products' ? PRODUCT_IMAGE_FILES : BRAND_IMAGE_FILES
     const normalizedKey = toSlug(normalized)
+    const imageDirectory = kind === 'products' ? 'brands' : 'products'
 
     if (normalizedKey && imageFiles[normalizedKey]) {
-      return `/placeholders/${kind}/${imageFiles[normalizedKey]}`
+      return `/placeholders/${imageDirectory}/${imageFiles[normalizedKey]}`
     }
 
     const fileName = normalized ? `${toSlug(normalized)}.png` : '_placeholder.svg'
-    return `/placeholders/${kind}/${fileName}`
+    return `/placeholders/${imageDirectory}/${fileName}`
   }
 
   useEffect(() => {
