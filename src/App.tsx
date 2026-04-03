@@ -59,60 +59,60 @@ const BRAND_OPTIONS = [
   'Vivo',
 ]
 
-const PRODUCT_IMAGE_MAP: Record<string, string> = {
-  Tablet: '/placeholders/products/tablet.png',
-  Microwave: '/placeholders/products/microwave.png',
-  'DSLR Camera': '/placeholders/products/dslr-camera.png',
-  'Air Conditioner': '/placeholders/products/air-conditioner.png',
-  Smartwatch: '/placeholders/products/smartwatch.png',
-  TV: '/placeholders/products/tv.png',
-  'Electric Scooter': '/placeholders/products/electric-scooter.png',
-  'Washing Machine': '/placeholders/products/washing-machine.png',
-  Laptop: '/placeholders/products/laptop.png',
-  Smartphone: '/placeholders/products/smartphone.png',
-  Refrigerator: '/placeholders/products/Refridgerator.png',
-  'Gaming Console': '/placeholders/products/gaming-console.png',
+const PRODUCT_IMAGE_FILES: Record<string, string> = {
+  tablet: 'tablet.png',
+  microwave: 'microwave.png',
+  'dslr-camera': 'dslr-camera.png',
+  'air-conditioner': 'air-conditioner.png',
+  smartwatch: 'smartwatch.png',
+  tv: 'tv.png',
+  'electric-scooter': 'electric-scooter.png',
+  'washing-machine': 'washing-machine.png',
+  laptop: 'laptop.png',
+  smartphone: 'smartphone.png',
+  refrigerator: 'Refridgerator.png',
+  'gaming-console': 'gaming-console.png',
 }
 
-const BRAND_IMAGE_MAP: Record<string, string> = {
-  Samsung: '/placeholders/brands/samsung.png',
-  LG: '/placeholders/brands/lg.png',
-  Apple: '/placeholders/brands/apple.png',
-  Sony: '/placeholders/brands/sony.png',
-  IFB: '/placeholders/brands/ifb.png',
-  Lenovo: '/placeholders/brands/lenovo.png',
-  Bosch: '/placeholders/brands/bosch.png',
-  Whirlpool: '/placeholders/brands/whirlpool.png',
-  OnePlus: '/placeholders/brands/oneplus.png',
-  Microsoft: '/placeholders/brands/mircrosoft.png',
-  Nintendo: '/placeholders/brands/nintendo.png',
-  Nikon: '/placeholders/brands/nikon.png',
-  Canon: '/placeholders/brands/canon.png',
-  Fujifilm: '/placeholders/brands/fujifilm.png',
-  Huawei: '/placeholders/brands/huawei.png',
-  Ola: '/placeholders/brands/ola.png',
-  Panasonic: '/placeholders/brands/panasonic.png',
-  Voltas: '/placeholders/brands/voltas.png',
-  Noise: '/placeholders/brands/noise.png',
-  Bajaj: '/placeholders/brands/bajaj.png',
-  Daikin: '/placeholders/brands/dalkin.png',
-  Amazfit: '/placeholders/brands/amazfit.png',
-  Carrier: '/placeholders/brands/carrier.png',
-  TVS: '/placeholders/brands/tvs.png',
-  Boat: '/placeholders/brands/boat.png',
-  'Blue Star': '/placeholders/brands/bluestar.png',
-  Ather: '/placeholders/brands/ather.png',
-  Hero: '/placeholders/brands/hero.png',
-  'Morphy Richards': '/placeholders/brands/morphy-richards.png',
-  TCL: '/placeholders/brands/tcl.png',
-  Acer: '/placeholders/brands/acer.png',
-  Godrej: '/placeholders/brands/godrej.png',
-  Realme: '/placeholders/brands/realme.png',
-  Asus: '/placeholders/brands/asus.png',
-  Dell: '/placeholders/brands/dell.png',
-  HP: '/placeholders/brands/hp.png',
-  Xiaomi: '/placeholders/brands/xiaomi.png',
-  Vivo: '/placeholders/brands/vivo.png',
+const BRAND_IMAGE_FILES: Record<string, string> = {
+  samsung: 'samsung.png',
+  lg: 'lg.png',
+  apple: 'apple.png',
+  sony: 'sony.png',
+  ifb: 'ifb.png',
+  lenovo: 'lenovo.png',
+  bosch: 'bosch.png',
+  whirlpool: 'whirlpool.png',
+  oneplus: 'oneplus.png',
+  microsoft: 'mircrosoft.png',
+  nintendo: 'nintendo.png',
+  nikon: 'nikon.png',
+  canon: 'canon.png',
+  fujifilm: 'fujifilm.png',
+  huawei: 'huawei.png',
+  ola: 'ola.png',
+  panasonic: 'panasonic.png',
+  voltas: 'voltas.png',
+  noise: 'noise.png',
+  bajaj: 'bajaj.png',
+  daikin: 'dalkin.png',
+  amazfit: 'amazfit.png',
+  carrier: 'carrier.png',
+  tvs: 'tvs.png',
+  boat: 'boat.png',
+  'blue-star': 'bluestar.png',
+  ather: 'ather.png',
+  hero: 'hero.png',
+  'morphy-richards': 'morphy-richards.png',
+  tcl: 'tcl.png',
+  acer: 'acer.png',
+  godrej: 'godrej.png',
+  realme: 'realme.png',
+  asus: 'asus.png',
+  dell: 'dell.png',
+  hp: 'hp.png',
+  xiaomi: 'xiaomi.png',
+  vivo: 'vivo.png',
 }
 
 type FormState = {
@@ -271,9 +271,12 @@ function App() {
 
   const getMappedImageSrc = (kind: 'products' | 'brands', value: string) => {
     const normalized = value.trim()
-    const imageMap = kind === 'products' ? PRODUCT_IMAGE_MAP : BRAND_IMAGE_MAP
+    const imageFiles = kind === 'products' ? PRODUCT_IMAGE_FILES : BRAND_IMAGE_FILES
+    const normalizedKey = toSlug(normalized)
 
-    if (normalized && imageMap[normalized]) return imageMap[normalized]
+    if (normalizedKey && imageFiles[normalizedKey]) {
+      return `/placeholders/${kind}/${imageFiles[normalizedKey]}`
+    }
 
     const fileName = normalized ? `${toSlug(normalized)}.png` : '_placeholder.svg'
     return `/placeholders/${kind}/${fileName}`
