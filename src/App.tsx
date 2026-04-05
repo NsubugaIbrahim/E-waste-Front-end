@@ -153,6 +153,15 @@ type ClientPayload = {
 
 type SpinClass = '' | 'spin-left' | 'spin-right'
 type ProjectionPoint = { year: number; probability: number }
+type ProjectionRequestInput = {
+  productType: string
+  brand: string
+  usageIntensity: number
+  buildQuality: number
+  condition: number
+  originalPrice: number
+  usedDuration: number
+}
 
 const PROJECTION_CHART = {
   xMin: 30,
@@ -163,6 +172,7 @@ const PROJECTION_CHART = {
 
 const REQUEST_TIMEOUT_MS = 20000
 const WHEEL_ANIM_DURATION = 520
+const PROJECTION_YEARS_AHEAD = 6
 const USAGE_PATTERN_TO_INTENSITY: Record<'Light' | 'Moderate' | 'Heavy', number> = {
   Light: 1,
   Moderate: 2,
@@ -444,106 +454,45 @@ function App() {
     } as const
   }
 
-  const buildProbabilityProjection = (input: {
-    buildQuality: number
-    condition: number
-    usedDuration: number
-    originalPrice: number
-    usageIntensity: number
-    baseProbabilityPct?: number
-  }): ProjectionPoint[] => {
-    const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
-    const yearsAhead = 6
-    const baseFromModel =
-      input.baseProbabilityPct !== undefined
-        ? clamp01(input.baseProbabilityPct / 100)
-        : undefined
+  const clampProbabilityPct = (value: number) => Math.max(0, Math.min(100, value))
 
-    const localNow =
-      clamp01(
-        Number(
-          localFallbackPrediction({
-            buildQuality: input.buildQuality,
-            condition: input.condition,
-            usedDuration: input.usedDuration,
-            usageIntensity: input.usageIntensity,
-            degradationRate: deriveModelFeatures({
-              buildQuality: input.buildQuality,
-              condition: input.condition,
-              originalPrice: input.originalPrice,
-              usedDuration: input.usedDuration,
-              usageIntensity: input.usageIntensity,
-            }).degradationRate,
-            stressIndex: deriveModelFeatures({
-              buildQuality: input.buildQuality,
-              condition: input.condition,
-              originalPrice: input.originalPrice,
-              usedDuration: input.usedDuration,
-              usageIntensity: input.usageIntensity,
-            }).stressIndex,
-          }).probability
-        )
-      ) / 100
+  const buildProbabilityProjectionLocal = (
+    input: ProjectionRequestInput & { baseProbabilityPct?: number }
+  ): ProjectionPoint[] => {
+    const series: ProjectionPoint[] = []
 
-    // Year-0 anchor is the model estimate (if present) or local estimate.
-    // Future years use an incremental hazard update so readiness never decreases.
-    const baseProbability = baseFromModel ?? localNow
-
-    const series: ProjectionPoint[] = [
-      {
-        year: 0,
-        probability: baseProbability * 100,
-      },
-    ]
-
-    let rollingProbability = baseProbability
-
-    for (let year = 1; year <= yearsAhead; year += 1) {
-      const futureCondition = Math.max(1, input.condition - 0.35 * year)
-      const futureBuildQuality = Math.max(1, input.buildQuality - 0.12 * year)
+    for (let year = 0; year <= PROJECTION_YEARS_AHEAD; year += 1) {
       const futureUsedDuration = input.usedDuration + year
-
       const futureDerived = deriveModelFeatures({
-        buildQuality: futureBuildQuality,
-        condition: futureCondition,
+        buildQuality: input.buildQuality,
+        condition: input.condition,
         originalPrice: input.originalPrice,
         usedDuration: futureUsedDuration,
         usageIntensity: input.usageIntensity,
       })
 
-      const futureLocal = clamp01(
-        Number(
-          localFallbackPrediction({
-            buildQuality: futureBuildQuality,
-            condition: futureCondition,
-            usedDuration: futureUsedDuration,
-            usageIntensity: input.usageIntensity,
-            degradationRate: futureDerived.degradationRate,
-            stressIndex: futureDerived.stressIndex,
-          }).probability
-        ) / 100
-      )
-
-      const degradationPressure = clamp01(futureDerived.degradationRate / 2)
-      const usagePressure = clamp01((input.usageIntensity - 1) / 2)
-      const agingPressure = clamp01(futureUsedDuration / 12)
-
-      const annualIncrement = clamp01(
-        0.018 +
-          0.05 * futureLocal +
-          0.035 * degradationPressure +
-          0.025 * usagePressure +
-          0.02 * agingPressure
-      )
-
-      rollingProbability = clamp01(
-        rollingProbability + (1 - rollingProbability) * annualIncrement
+      const futureLocal = Number(
+        localFallbackPrediction({
+          buildQuality: input.buildQuality,
+          condition: input.condition,
+          usedDuration: futureUsedDuration,
+          usageIntensity: input.usageIntensity,
+          degradationRate: futureDerived.degradationRate,
+          stressIndex: futureDerived.stressIndex,
+        }).probability
       )
 
       series.push({
         year,
-        probability: rollingProbability * 100,
+        probability: clampProbabilityPct(futureLocal),
       })
+    }
+
+    if (input.baseProbabilityPct !== undefined && series.length > 0) {
+      series[0] = {
+        year: 0,
+        probability: clampProbabilityPct(input.baseProbabilityPct),
+      }
     }
 
     return series
@@ -811,6 +760,82 @@ function App() {
     return parsed
   }
 
+  const buildProjectionViaClient = async (
+    spaceId: string,
+    input: ProjectionRequestInput,
+    yearZeroProbabilityPct: number
+  ): Promise<ProjectionPoint[]> => {
+    const apiName =
+      ((import.meta.env.VITE_GRADIO_API_NAME as string | undefined)?.trim() ||
+        '/predict') as '/predict'
+
+    const client = await withTimeout(
+      Client.connect(spaceId, getClientOptions()),
+      REQUEST_TIMEOUT_MS,
+      `connecting to Space ${spaceId} for projection`
+    )
+
+    const series: ProjectionPoint[] = [
+      {
+        year: 0,
+        probability: clampProbabilityPct(yearZeroProbabilityPct),
+      },
+    ]
+
+    for (let year = 1; year <= PROJECTION_YEARS_AHEAD; year += 1) {
+      const futurePayload = buildClientPayload({
+        ...input,
+        usedDuration: input.usedDuration + year,
+      })
+
+      const raw = await withTimeout(
+        client.predict(apiName, futurePayload),
+        REQUEST_TIMEOUT_MS,
+        `projecting year ${year} on Space ${spaceId}`
+      )
+
+      const parsed = parseClientPrediction(raw)
+      if (!parsed) {
+        throw new Error(`Unexpected response format from Space ${spaceId} during projection`)
+      }
+
+      series.push({
+        year,
+        probability: clampProbabilityPct(parsed.probability),
+      })
+    }
+
+    return series
+  }
+
+  const buildProjectionViaEndpoint = async (
+    endpoint: string,
+    input: ProjectionRequestInput,
+    yearZeroProbabilityPct: number
+  ): Promise<ProjectionPoint[]> => {
+    const series: ProjectionPoint[] = [
+      {
+        year: 0,
+        probability: clampProbabilityPct(yearZeroProbabilityPct),
+      },
+    ]
+
+    for (let year = 1; year <= PROJECTION_YEARS_AHEAD; year += 1) {
+      const futurePayload = buildPayload({
+        ...input,
+        usedDuration: input.usedDuration + year,
+      })
+      const prediction = await requestPrediction(endpoint, futurePayload)
+
+      series.push({
+        year,
+        probability: clampProbabilityPct(prediction.probability),
+      })
+    }
+
+    return series
+  }
+
   const testSpaceConnection = async (spaceId: string) => {
     await withTimeout(
       Client.connect(spaceId, getClientOptions()),
@@ -992,7 +1017,7 @@ function App() {
       usageIntensity,
     })
 
-    const payload = buildPayload({
+    const projectionInput: ProjectionRequestInput = {
       productType: form.productType.trim(),
       brand: form.brand.trim(),
       usageIntensity,
@@ -1000,17 +1025,11 @@ function App() {
       condition,
       originalPrice,
       usedDuration,
-    })
+    }
 
-    const clientPayload = buildClientPayload({
-      productType: form.productType.trim(),
-      brand: form.brand.trim(),
-      usageIntensity,
-      buildQuality,
-      condition,
-      originalPrice,
-      usedDuration,
-    })
+    const payload = buildPayload(projectionInput)
+
+    const clientPayload = buildClientPayload(projectionInput)
 
     setIsLoading(true)
 
@@ -1037,16 +1056,23 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
-            setProjection(
-              buildProbabilityProjection({
-                buildQuality,
-                condition,
-                usedDuration,
-                originalPrice,
-                usageIntensity,
-                baseProbabilityPct: prediction.probability,
-              })
-            )
+
+            try {
+              const remoteProjection = await buildProjectionViaClient(
+                spaceId,
+                projectionInput,
+                prediction.probability
+              )
+              setProjection(remoteProjection)
+            } catch (projectionError) {
+              console.warn('Remote projection failed. Falling back to local sweep:', projectionError)
+              setProjection(
+                buildProbabilityProjectionLocal({
+                  ...projectionInput,
+                  baseProbabilityPct: prediction.probability,
+                })
+              )
+            }
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -1082,16 +1108,23 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
-            setProjection(
-              buildProbabilityProjection({
-                buildQuality,
-                condition,
-                usedDuration,
-                originalPrice,
-                usageIntensity,
-                baseProbabilityPct: prediction.probability,
-              })
-            )
+
+            try {
+              const remoteProjection = await buildProjectionViaEndpoint(
+                endpoint,
+                projectionInput,
+                prediction.probability
+              )
+              setProjection(remoteProjection)
+            } catch (projectionError) {
+              console.warn('Remote projection failed. Falling back to local sweep:', projectionError)
+              setProjection(
+                buildProbabilityProjectionLocal({
+                  ...projectionInput,
+                  baseProbabilityPct: prediction.probability,
+                })
+              )
+            }
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -1119,12 +1152,8 @@ function App() {
       })
       setResult(fallback)
       setProjection(
-        buildProbabilityProjection({
-          buildQuality,
-          condition,
-          usedDuration,
-          originalPrice,
-          usageIntensity,
+        buildProbabilityProjectionLocal({
+          ...projectionInput,
           baseProbabilityPct: Number(fallback.probability),
         })
       )
@@ -1142,12 +1171,8 @@ function App() {
       })
       setResult(fallback)
       setProjection(
-        buildProbabilityProjection({
-          buildQuality,
-          condition,
-          usedDuration,
-          originalPrice,
-          usageIntensity,
+        buildProbabilityProjectionLocal({
+          ...projectionInput,
           baseProbabilityPct: Number(fallback.probability),
         })
       )
@@ -1503,7 +1528,7 @@ function App() {
             className="result-card"
           >
             <h2>Status: {result.status}</h2>
-            <p>Confidence: {result.probability}%</p>
+            <p>Readiness probability (model confidence): {result.probability}%</p>
             <p>
               <strong>Explanation:</strong> {result.explanation}
             </p>
