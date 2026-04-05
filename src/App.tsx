@@ -59,60 +59,60 @@ const BRAND_OPTIONS = [
   'Vivo',
 ]
 
-const PRODUCT_IMAGE_FILES: Record<string, string> = {
-  tablet: 'tablet.png',
-  microwave: 'microwave.png',
-  'dslr-camera': 'dslr-camera.png',
-  'air-conditioner': 'air-conditioner.png',
-  smartwatch: 'smartwatch.png',
-  tv: 'tv.png',
-  'electric-scooter': 'electric-scooter.png',
-  'washing-machine': 'washing-machine.png',
-  laptop: 'laptop.png',
-  smartphone: 'smartphone.png',
-  refrigerator: 'Refridgerator.png',
-  'gaming-console': 'gaming-console.png',
+const PRODUCT_IMAGE_MAP: Record<string, string> = {
+  Tablet: '/placeholders/products/tablet.png',
+  Microwave: '/placeholders/products/microwave.png',
+  'DSLR Camera': '/placeholders/products/dslr-camera.png',
+  'Air Conditioner': '/placeholders/products/air-conditioner.png',
+  Smartwatch: '/placeholders/products/smartwatch.png',
+  TV: '/placeholders/products/tv.png',
+  'Electric Scooter': '/placeholders/products/electric-scooter.png',
+  'Washing Machine': '/placeholders/products/washing-machine.png',
+  Laptop: '/placeholders/products/laptop.png',
+  Smartphone: '/placeholders/products/smartphone.png',
+  Refrigerator: '/placeholders/products/refrigerator.png',
+  'Gaming Console': '/placeholders/products/gaming-console.png',
 }
 
-const BRAND_IMAGE_FILES: Record<string, string> = {
-  samsung: 'samsung.png',
-  lg: 'lg.png',
-  apple: 'apple.png',
-  sony: 'sony.png',
-  ifb: 'ifb.png',
-  lenovo: 'lenovo.png',
-  bosch: 'bosch.png',
-  whirlpool: 'whirlpool.png',
-  oneplus: 'oneplus.png',
-  microsoft: 'mircrosoft.png',
-  nintendo: 'nintendo.png',
-  nikon: 'nikon.png',
-  canon: 'canon.png',
-  fujifilm: 'fujifilm.png',
-  huawei: 'huawei.png',
-  ola: 'ola.png',
-  panasonic: 'panasonic.png',
-  voltas: 'voltas.png',
-  noise: 'noise.png',
-  bajaj: 'bajaj.png',
-  daikin: 'dalkin.png',
-  amazfit: 'amazfit.png',
-  carrier: 'carrier.png',
-  tvs: 'tvs.png',
-  boat: 'boat.png',
-  'blue-star': 'bluestar.png',
-  ather: 'ather.png',
-  hero: 'hero.png',
-  'morphy-richards': 'morphy-richards.png',
-  tcl: 'tcl.png',
-  acer: 'acer.png',
-  godrej: 'godrej.png',
-  realme: 'realme.png',
-  asus: 'asus.png',
-  dell: 'dell.png',
-  hp: 'hp.png',
-  xiaomi: 'xiaomi.png',
-  vivo: 'vivo.png',
+const BRAND_IMAGE_MAP: Record<string, string> = {
+  Samsung: '/placeholders/brands/samsung.png',
+  LG: '/placeholders/brands/lg.png',
+  Apple: '/placeholders/brands/apple.png',
+  Sony: '/placeholders/brands/sony.png',
+  IFB: '/placeholders/brands/ifb.png',
+  Lenovo: '/placeholders/brands/lenovo.png',
+  Bosch: '/placeholders/brands/bosch.png',
+  Whirlpool: '/placeholders/brands/whirlpool.png',
+  OnePlus: '/placeholders/brands/oneplus.png',
+  Microsoft: '/placeholders/brands/microsoft.png',
+  Nintendo: '/placeholders/brands/nintendo.png',
+  Nikon: '/placeholders/brands/nikon.png',
+  Canon: '/placeholders/brands/canon.png',
+  Fujifilm: '/placeholders/brands/fujifilm.png',
+  Huawei: '/placeholders/brands/huawei.png',
+  Ola: '/placeholders/brands/ola.png',
+  Panasonic: '/placeholders/brands/panasonic.png',
+  Voltas: '/placeholders/brands/voltas.png',
+  Noise: '/placeholders/brands/noise.png',
+  Bajaj: '/placeholders/brands/bajaj.png',
+  Daikin: '/placeholders/brands/daikin.png',
+  Amazfit: '/placeholders/brands/amazfit.png',
+  Carrier: '/placeholders/brands/carrier.png',
+  TVS: '/placeholders/brands/tvs.png',
+  Boat: '/placeholders/brands/boat.png',
+  'Blue Star': '/placeholders/brands/blue-star.png',
+  Ather: '/placeholders/brands/ather.png',
+  Hero: '/placeholders/brands/hero.png',
+  'Morphy Richards': '/placeholders/brands/morphy-richards.png',
+  TCL: '/placeholders/brands/tcl.png',
+  Acer: '/placeholders/brands/acer.png',
+  Godrej: '/placeholders/brands/godrej.png',
+  Realme: '/placeholders/brands/realme.png',
+  Asus: '/placeholders/brands/asus.png',
+  Dell: '/placeholders/brands/dell.png',
+  HP: '/placeholders/brands/hp.png',
+  Xiaomi: '/placeholders/brands/xiaomi.png',
+  Vivo: '/placeholders/brands/vivo.png',
 }
 
 type FormState = {
@@ -149,20 +149,26 @@ type ClientPayload = {
   condition: number
   original_price: number
   used_duration: number
+  degradation_rate: number
+  stress_index: number
+  investment_density: number
 }
 
 type SpinClass = '' | 'spin-left' | 'spin-right'
 type ProjectionPoint = { year: number; probability: number }
-
-const PROJECTION_CHART = {
-  xMin: 30,
-  xMax: 400,
-  yMin: 20,
-  yMax: 140,
+type ProjectionRequestInput = {
+  productType: string
+  brand: string
+  usageIntensity: number
+  buildQuality: number
+  condition: number
+  originalPrice: number
+  usedDuration: number
 }
 
 const REQUEST_TIMEOUT_MS = 20000
 const WHEEL_ANIM_DURATION = 520
+const PROJECTION_YEARS_AHEAD = 6
 const USAGE_PATTERN_TO_INTENSITY: Record<'Light' | 'Moderate' | 'Heavy', number> = {
   Light: 1,
   Moderate: 2,
@@ -271,16 +277,12 @@ function App() {
 
   const getMappedImageSrc = (kind: 'products' | 'brands', value: string) => {
     const normalized = value.trim()
-    const imageFiles = kind === 'products' ? PRODUCT_IMAGE_FILES : BRAND_IMAGE_FILES
-    const normalizedKey = toSlug(normalized)
-    const imageDirectory = kind === 'products' ? 'brands' : 'products'
+    const imageMap = kind === 'products' ? PRODUCT_IMAGE_MAP : BRAND_IMAGE_MAP
 
-    if (normalizedKey && imageFiles[normalizedKey]) {
-      return `/placeholders/${imageDirectory}/${imageFiles[normalizedKey]}`
-    }
+    if (normalized && imageMap[normalized]) return imageMap[normalized]
 
     const fileName = normalized ? `${toSlug(normalized)}.png` : '_placeholder.svg'
-    return `/placeholders/${imageDirectory}/${fileName}`
+    return `/placeholders/${kind}/${fileName}`
   }
 
   useEffect(() => {
@@ -444,159 +446,73 @@ function App() {
     } as const
   }
 
-  const buildProbabilityProjection = (input: {
-    buildQuality: number
-    condition: number
-    usedDuration: number
-    originalPrice: number
-    usageIntensity: number
-    baseProbabilityPct?: number
-  }): ProjectionPoint[] => {
-    const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
-    const yearsAhead = 6
-    const baseFromModel =
-      input.baseProbabilityPct !== undefined
-        ? clamp01(input.baseProbabilityPct / 100)
-        : undefined
+  const clampProbabilityPct = (value: number) => Math.max(0, Math.min(100, value))
 
-    const localNow =
-      clamp01(
-        Number(
-          localFallbackPrediction({
-            buildQuality: input.buildQuality,
-            condition: input.condition,
-            usedDuration: input.usedDuration,
-            usageIntensity: input.usageIntensity,
-            degradationRate: deriveModelFeatures({
-              buildQuality: input.buildQuality,
-              condition: input.condition,
-              originalPrice: input.originalPrice,
-              usedDuration: input.usedDuration,
-              usageIntensity: input.usageIntensity,
-            }).degradationRate,
-            stressIndex: deriveModelFeatures({
-              buildQuality: input.buildQuality,
-              condition: input.condition,
-              originalPrice: input.originalPrice,
-              usedDuration: input.usedDuration,
-              usageIntensity: input.usageIntensity,
-            }).stressIndex,
-          }).probability
-        )
-      ) / 100
+  const buildProbabilityProjectionLocal = (
+    input: ProjectionRequestInput & { baseProbabilityPct?: number }
+  ): ProjectionPoint[] => {
+    const series: ProjectionPoint[] = []
 
-    // Year-0 anchor is the model estimate (if present) or local estimate.
-    // Future years use an incremental hazard update so readiness never decreases.
-    const baseProbability = baseFromModel ?? localNow
-
-    const series: ProjectionPoint[] = [
-      {
-        year: 0,
-        probability: baseProbability * 100,
-      },
-    ]
-
-    let rollingProbability = baseProbability
-
-    for (let year = 1; year <= yearsAhead; year += 1) {
-      const futureCondition = Math.max(1, input.condition - 0.35 * year)
-      const futureBuildQuality = Math.max(1, input.buildQuality - 0.12 * year)
+    for (let year = 0; year <= PROJECTION_YEARS_AHEAD; year += 1) {
       const futureUsedDuration = input.usedDuration + year
-
       const futureDerived = deriveModelFeatures({
-        buildQuality: futureBuildQuality,
-        condition: futureCondition,
+        buildQuality: input.buildQuality,
+        condition: input.condition,
         originalPrice: input.originalPrice,
         usedDuration: futureUsedDuration,
         usageIntensity: input.usageIntensity,
       })
 
-      const futureLocal = clamp01(
-        Number(
-          localFallbackPrediction({
-            buildQuality: futureBuildQuality,
-            condition: futureCondition,
-            usedDuration: futureUsedDuration,
-            usageIntensity: input.usageIntensity,
-            degradationRate: futureDerived.degradationRate,
-            stressIndex: futureDerived.stressIndex,
-          }).probability
-        ) / 100
-      )
-
-      const degradationPressure = clamp01(futureDerived.degradationRate / 2)
-      const usagePressure = clamp01((input.usageIntensity - 1) / 2)
-      const agingPressure = clamp01(futureUsedDuration / 12)
-
-      const annualIncrement = clamp01(
-        0.018 +
-          0.05 * futureLocal +
-          0.035 * degradationPressure +
-          0.025 * usagePressure +
-          0.02 * agingPressure
-      )
-
-      rollingProbability = clamp01(
-        rollingProbability + (1 - rollingProbability) * annualIncrement
+      const futureLocal = Number(
+        localFallbackPrediction({
+          buildQuality: input.buildQuality,
+          condition: input.condition,
+          usedDuration: futureUsedDuration,
+          usageIntensity: input.usageIntensity,
+          degradationRate: futureDerived.degradationRate,
+          stressIndex: futureDerived.stressIndex,
+        }).probability
       )
 
       series.push({
         year,
-        probability: rollingProbability * 100,
+        probability: clampProbabilityPct(futureLocal),
       })
+    }
+
+    if (input.baseProbabilityPct !== undefined && series.length > 0) {
+      series[0] = {
+        year: 0,
+        probability: clampProbabilityPct(input.baseProbabilityPct),
+      }
     }
 
     return series
   }
 
-  const getProjectionChartPoints = (series: ProjectionPoint[]) => {
-    const total = series.length - 1
-    const xRange = PROJECTION_CHART.xMax - PROJECTION_CHART.xMin
-    const yRange = PROJECTION_CHART.yMax - PROJECTION_CHART.yMin
-
-    return series.map((point, index) => {
-      const safeProbability = Math.max(0, Math.min(100, point.probability))
-      const ratio = total > 0 ? index / total : 0
-      const x = PROJECTION_CHART.xMin + ratio * xRange
-      const y = PROJECTION_CHART.yMax - (safeProbability / 100) * yRange
-
-      return {
-        ...point,
-        probability: safeProbability,
-        x,
-        y,
-      }
-    })
-  }
-
   const getCandidateEndpoints = () => {
     const directUrl = (import.meta.env.VITE_PREDICT_URL as string | undefined)?.trim()
     const spaceUrl = (import.meta.env.VITE_HF_SPACE_URL as string | undefined)?.trim()
+    const apiName =
+      (import.meta.env.VITE_GRADIO_API_NAME as string | undefined)?.trim() ||
+      '/predict'
 
     const endpoints = new Set<string>()
 
-    const addFromValue = (value: string) => {
-      const normalized = value.trim().replace(/\/+$/, '')
-      if (!normalized) return
+    if (directUrl) endpoints.add(directUrl)
 
-      if (/\/run\/predict$/i.test(normalized)) {
-        endpoints.add(normalized)
-        endpoints.add(normalized.replace(/\/run\/predict$/i, '/api/predict'))
-        return
+    if (spaceUrl) {
+      if (spaceUrl.includes('huggingface.co')) {
+        return Array.from(endpoints)
       }
 
-      if (/\/api\/predict$/i.test(normalized)) {
-        endpoints.add(normalized)
-        endpoints.add(normalized.replace(/\/api\/predict$/i, '/run/predict'))
-        return
-      }
-
-      endpoints.add(`${normalized}/run/predict`)
-      endpoints.add(`${normalized}/api/predict`)
+      const normalizedBase = spaceUrl.replace(/\/+$/, '')
+      const normalizedApiName = apiName.startsWith('/') ? apiName : `/${apiName}`
+      endpoints.add(`${normalizedBase}/run${normalizedApiName}`)
+      endpoints.add(`${normalizedBase}/api${normalizedApiName}`)
+      endpoints.add(`${normalizedBase}/run/predict`)
+      endpoints.add(`${normalizedBase}/api/predict`)
     }
-
-    if (directUrl) addFromValue(directUrl)
-    if (spaceUrl) addFromValue(spaceUrl)
 
     return Array.from(endpoints)
   }
@@ -811,6 +727,78 @@ function App() {
     return parsed
   }
 
+  const buildProjectionViaClient = async (
+    spaceId: string,
+    input: ProjectionRequestInput,
+    yearZeroProbabilityPct: number
+  ): Promise<ProjectionPoint[]> => {
+    const apiName =
+      ((import.meta.env.VITE_GRADIO_API_NAME as string | undefined)?.trim() ||
+        '/predict') as '/predict'
+
+    const client = await withTimeout(
+      Client.connect(spaceId, getClientOptions()),
+      REQUEST_TIMEOUT_MS,
+      `connecting to Space ${spaceId} for projection`
+    )
+
+    const series: ProjectionPoint[] = [{
+      year: 0,
+      probability: clampProbabilityPct(yearZeroProbabilityPct),
+    }]
+
+    for (let year = 1; year <= PROJECTION_YEARS_AHEAD; year += 1) {
+      const futurePayload = buildClientPayload({
+        ...input,
+        usedDuration: input.usedDuration + year,
+      })
+
+      const raw = await withTimeout(
+        client.predict(apiName, futurePayload),
+        REQUEST_TIMEOUT_MS,
+        `projecting year ${year} on Space ${spaceId}`
+      )
+
+      const parsed = parseClientPrediction(raw)
+      if (!parsed) {
+        throw new Error(`Unexpected response format from Space ${spaceId} during projection`)
+      }
+
+      series.push({
+        year,
+        probability: clampProbabilityPct(parsed.probability),
+      })
+    }
+
+    return series
+  }
+
+  const buildProjectionViaEndpoint = async (
+    endpoint: string,
+    input: ProjectionRequestInput,
+    yearZeroProbabilityPct: number
+  ): Promise<ProjectionPoint[]> => {
+    const series: ProjectionPoint[] = [{
+      year: 0,
+      probability: clampProbabilityPct(yearZeroProbabilityPct),
+    }]
+
+    for (let year = 1; year <= PROJECTION_YEARS_AHEAD; year += 1) {
+      const futurePayload = buildPayload({
+        ...input,
+        usedDuration: input.usedDuration + year,
+      })
+      const prediction = await requestPrediction(endpoint, futurePayload)
+
+      series.push({
+        year,
+        probability: clampProbabilityPct(prediction.probability),
+      })
+    }
+
+    return series
+  }
+
   const testSpaceConnection = async (spaceId: string) => {
     await withTimeout(
       Client.connect(spaceId, getClientOptions()),
@@ -855,6 +843,14 @@ function App() {
     originalPrice: number
     usedDuration: number
   }): ClientPayload => {
+    const derived = deriveModelFeatures({
+      buildQuality: input.buildQuality,
+      condition: input.condition,
+      originalPrice: input.originalPrice,
+      usedDuration: input.usedDuration,
+      usageIntensity: input.usageIntensity,
+    })
+
     return {
       product_type: input.productType,
       brand: input.brand,
@@ -863,6 +859,9 @@ function App() {
       condition: input.condition,
       original_price: input.originalPrice,
       used_duration: input.usedDuration,
+      degradation_rate: derived.degradationRate,
+      stress_index: derived.stressIndex,
+      investment_density: derived.investmentDensity,
     }
   }
 
@@ -992,7 +991,7 @@ function App() {
       usageIntensity,
     })
 
-    const payload = buildPayload({
+    const projectionInput: ProjectionRequestInput = {
       productType: form.productType.trim(),
       brand: form.brand.trim(),
       usageIntensity,
@@ -1000,17 +999,11 @@ function App() {
       condition,
       originalPrice,
       usedDuration,
-    })
+    }
 
-    const clientPayload = buildClientPayload({
-      productType: form.productType.trim(),
-      brand: form.brand.trim(),
-      usageIntensity,
-      buildQuality,
-      condition,
-      originalPrice,
-      usedDuration,
-    })
+    const payload = buildPayload(projectionInput)
+
+    const clientPayload = buildClientPayload(projectionInput)
 
     setIsLoading(true)
 
@@ -1037,16 +1030,23 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
-            setProjection(
-              buildProbabilityProjection({
-                buildQuality,
-                condition,
-                usedDuration,
-                originalPrice,
-                usageIntensity,
-                baseProbabilityPct: prediction.probability,
-              })
-            )
+
+            try {
+              const remoteProjection = await buildProjectionViaClient(
+                spaceId,
+                projectionInput,
+                prediction.probability
+              )
+              setProjection(remoteProjection)
+            } catch (projectionError) {
+              console.warn('Remote projection failed. Falling back to local sweep:', projectionError)
+              setProjection(
+                buildProbabilityProjectionLocal({
+                  ...projectionInput,
+                  baseProbabilityPct: prediction.probability,
+                })
+              )
+            }
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -1082,16 +1082,23 @@ function App() {
               explanation: prediction.explanation,
               recommendation: prediction.recommendation,
             })
-            setProjection(
-              buildProbabilityProjection({
-                buildQuality,
-                condition,
-                usedDuration,
-                originalPrice,
-                usageIntensity,
-                baseProbabilityPct: prediction.probability,
-              })
-            )
+
+            try {
+              const remoteProjection = await buildProjectionViaEndpoint(
+                endpoint,
+                projectionInput,
+                prediction.probability
+              )
+              setProjection(remoteProjection)
+            } catch (projectionError) {
+              console.warn('Remote projection failed. Falling back to local sweep:', projectionError)
+              setProjection(
+                buildProbabilityProjectionLocal({
+                  ...projectionInput,
+                  baseProbabilityPct: prediction.probability,
+                })
+              )
+            }
             return
           } catch (e) {
             const message = formatUnknownError(e)
@@ -1119,12 +1126,8 @@ function App() {
       })
       setResult(fallback)
       setProjection(
-        buildProbabilityProjection({
-          buildQuality,
-          condition,
-          usedDuration,
-          originalPrice,
-          usageIntensity,
+        buildProbabilityProjectionLocal({
+          ...projectionInput,
           baseProbabilityPct: Number(fallback.probability),
         })
       )
@@ -1142,12 +1145,8 @@ function App() {
       })
       setResult(fallback)
       setProjection(
-        buildProbabilityProjection({
-          buildQuality,
-          condition,
-          usedDuration,
-          originalPrice,
-          usageIntensity,
+        buildProbabilityProjectionLocal({
+          ...projectionInput,
           baseProbabilityPct: Number(fallback.probability),
         })
       )
@@ -1163,12 +1162,6 @@ function App() {
       setIsLoading(false)
     }
   }
-
-  const projectionStartYear = new Date().getFullYear()
-  const projectionChartPoints = getProjectionChartPoints(projection)
-  const projectionPath = projectionChartPoints
-    .map((point) => `${point.x},${point.y}`)
-    .join(' ')
 
   return (
     <div className="app-shell">
@@ -1503,7 +1496,7 @@ function App() {
             className="result-card"
           >
             <h2>Status: {result.status}</h2>
-            <p>Confidence: {result.probability}%</p>
+            <p>Readiness probability (model confidence): {result.probability}%</p>
             <p>
               <strong>Explanation:</strong> {result.explanation}
             </p>
@@ -1515,15 +1508,13 @@ function App() {
               <div className="projection-chart-wrap">
                 <h3>E-Waste Readiness Projection (next years)</h3>
                 <svg viewBox="0 0 420 170" className="projection-chart" role="img" aria-label="E-waste readiness projection over coming years">
-                  <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMax} x2={PROJECTION_CHART.xMax} y2={PROJECTION_CHART.yMax} className="projection-axis" />
-                  <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMin} x2={PROJECTION_CHART.xMin} y2={PROJECTION_CHART.yMax} className="projection-axis" />
+                  <line x1="30" y1="140" x2="400" y2="140" className="projection-axis" />
+                  <line x1="30" y1="20" x2="30" y2="140" className="projection-axis" />
                   {[0, 25, 50, 75, 100].map((tick) => {
-                    const y =
-                      PROJECTION_CHART.yMax -
-                      (tick / 100) * (PROJECTION_CHART.yMax - PROJECTION_CHART.yMin)
+                    const y = 140 - (tick / 100) * 120
                     return (
                       <g key={`tick-${tick}`}>
-                        <line x1={PROJECTION_CHART.xMin} y1={y} x2={PROJECTION_CHART.xMax} y2={y} className="projection-grid" />
+                        <line x1="30" y1={y} x2="400" y2={y} className="projection-grid" />
                         <text x="6" y={y + 4} className="projection-tick-label">
                           {tick}%
                         </text>
@@ -1534,17 +1525,24 @@ function App() {
                   <polyline
                     className="projection-line"
                     fill="none"
-                    points={projectionPath}
+                    points={projection
+                      .map((point, index) => {
+                        const x = 30 + (index / (projection.length - 1)) * 370
+                        const y = 140 - (point.probability / 100) * 120
+                        return `${x},${y}`
+                      })
+                      .join(' ')}
                   />
 
-                  {projectionChartPoints.map((point) => {
+                  {projection.map((point, index) => {
+                    const x = 30 + (index / (projection.length - 1)) * 370
+                    const y = 140 - (point.probability / 100) * 120
                     return (
                       <g key={`point-${point.year}`}>
-                        <circle cx={point.x} cy={point.y} r="4.2" className="projection-point" />
-                        <text x={point.x - 13} y="157" className="projection-year-label">
-                          {projectionStartYear + point.year}
+                        <circle cx={x} cy={y} r="3.5" className="projection-point" />
+                        <text x={x - 10} y="157" className="projection-year-label">
+                          {2026 + point.year}
                         </text>
-                        <title>{`Year ${projectionStartYear + point.year}: ${point.probability.toFixed(2)}%`}</title>
                       </g>
                     )
                   })}
