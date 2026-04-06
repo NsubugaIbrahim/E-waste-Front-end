@@ -440,17 +440,22 @@ function App() {
       0.15 * stressRisk
 
     const probability = Math.max(0, Math.min(1, riskScore))
+    const probabilityPct = probability * 100
+    const recommendation =
+      probability > 0.8
+        ? 'Automatic Disposal: Recycle via certified e-waste channels.'
+        : probability < 0.4
+          ? 'Continue Service: Continue using the device with routine maintenance.'
+          : 'Flag for Technical Review: Send for technician assessment before final decision.'
+
     return {
       status: probability >= 0.5 ? 'READY' : 'NOT READY',
-      probability: (probability * 100).toFixed(2),
+      probability: probabilityPct.toFixed(2),
       explanation:
         probability >= 0.5
           ? 'Remote prediction failed. Local estimate indicates elevated disposal readiness risk.'
           : 'Remote prediction failed. Local estimate indicates disposal readiness is currently low.',
-      recommendation:
-        probability >= 0.5
-          ? 'Inspect device and route to certified e-waste channel if confirmed.'
-          : 'Continue usage with periodic condition checks.',
+      recommendation,
     } as const
   }
 
