@@ -1533,7 +1533,7 @@ function App() {
             className="result-card"
           >
             <h2>Status: {result.status}</h2>
-            <p>Readiness probability (model confidence): {result.probability}%</p>
+            <p>Readiness probability: {result.probability}%</p>
             <p>
               <strong>Explanation:</strong> {result.explanation}
             </p>
@@ -1543,7 +1543,7 @@ function App() {
 
             {projection.length > 1 && (
               <div className="projection-chart-wrap">
-                <h3>E-Waste Readiness Projection (next years)</h3>
+                <h3>E-Waste Readiness Projection (coming years)</h3>
                 <svg viewBox="0 0 420 170" className="projection-chart" role="img" aria-label="E-waste readiness projection over coming years">
                   <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMax} x2={PROJECTION_CHART.xMax} y2={PROJECTION_CHART.yMax} className="projection-axis" />
                   <line x1={PROJECTION_CHART.xMin} y1={PROJECTION_CHART.yMin} x2={PROJECTION_CHART.xMin} y2={PROJECTION_CHART.yMax} className="projection-axis" />
